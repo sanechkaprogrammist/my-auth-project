@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Админка</title>
+  <style>
+    body { font-family: Arial; max-width: 700px; margin: 30px auto; }
+    h1, h3 { text-align: center; }
+    input, button { padding: 10px; margin: 6px 0; font-size: 16px; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; }
+    ul { padding: 0; }
+    li { background: #f8f9fa; margin: 10px 0; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+    #message { color: red; text-align: center; font-weight: bold; margin: 15px 0; }
+  </style>
+</head>
+<body>
+  <h1>Админ-панель</h1>
+
+  <h3>Добавить пользователя</h3>
+  <input id="new-username" placeholder="Логин">
+  <input id="new-password" type="password" placeholder="Пароль">
+  <button onclick="createUser()">Создать</button>
+
+  <h3>Список пользователей</h3>
+  <ul id="users-list"></ul>
+
+  <div id="message"></div>
+
+  <script>
+    const API_URL = 'http://localhost:3000';
+
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${API_URL}/admin/users`);
+        if (!res.ok) throw new Error();
+        const users = await res.json();
+        const list = document.getElementById('users-list');
+        list.innerHTML = '';
+        users.forEach(u => {
+          const li = document.createElement('li');
+          li.innerHTML = `<span><strong>${u.username}</strong> (ID: ${u._id})</span>
+                          <button onclick="deleteUser('${u._id}')">Удалить</button>`;
+          list.appendChild(li);
+        });
+      } catch {
+        document.getElementById('message').textContent = 'Ошибка загрузки списка';
+      }
+    }
+
+    async function createUser() {
+      const un = document.getElementById('new-username').value.trim();
+      const pw = document.getElementById('new-password').value.trim();
+      const msg = document.getElementById('message');
+
+      if (!un || !pw) {
+        msg.textContent = 'Заполните логин и пароль';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/admin/create`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username: un, password: pw})
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          msg.style.color = 'green';
+          msg.textContent = 'Создан!';
+          document.getElementById('new-username').value = '';
+          document.getElementById('new-password').value = '';
+          loadUsers();
+        } else {
+          msg.style.color = 'red';
+          msg.textContent = data.error || 'Ошибка';
+        }
+      } catch {
+        msg.textContent = 'Не удалось соединиться';
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Удалить?')) return;
+      try {
+        const res = await fetch(`${API_URL}/admin/delete/${id}`, {method: 'DELETE'});
+        if (res.ok) {
+          document.getElementById('message').style.color = 'green';
+          document.getElementById('message').textContent = 'Удалено!';
+          loadUsers();
+        } else {
+          document.getElementById('message').textContent = 'Ошибка удаления';
+        }
+      } catch {
+        document.getElementById('message').textContent = 'Не удалось соединиться';
+      }
+    }
+
+    loadUsers(); // загрузить список сразу
+  </script>
+</body>
+</html>

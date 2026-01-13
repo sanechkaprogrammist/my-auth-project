@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Вход</title>
+  <style>
+    body { font-family: Arial; max-width: 400px; margin: 80px auto; text-align: center; }
+    input { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; }
+    button { padding: 12px 30px; background: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; }
+    #message { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Вход в систему</h1>
+  <input id="username" placeholder="Логин" required>
+  <input id="password" type="password" placeholder="Пароль" required>
+  <button onclick="login()">Войти</button>
+  <div id="message"></div>
+
+  <script>
+    const API_URL = 'http://localhost:3000';
+
+    async function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const msg = document.getElementById('message');
+
+      msg.style.color = 'black';
+      msg.textContent = 'Проверка...';
+
+      if (!username || !password) {
+        msg.style.color = 'red';
+        msg.textContent = 'Заполните оба поля';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/login`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username, password})
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          msg.style.color = 'green';
+          msg.textContent = data.message + ' ✓';
+        } else {
+          msg.style.color = 'red';
+          msg.textContent = data.error || 'Ошибка';
+        }
+      } catch (e) {
+        msg.style.color = 'red';
+        msg.textContent = 'Не удалось соединиться с сервером';
+      }
+    }
+  </script>
+</body>
+</html>
