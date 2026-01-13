@@ -2,102 +2,129 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Админка</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Админ-панель</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <style>
-    body { font-family: Arial; max-width: 700px; margin: 30px auto; }
-    h1, h3 { text-align: center; }
-    input, button { padding: 10px; margin: 6px 0; font-size: 16px; }
-    button { background: #007bff; color: white; border: none; cursor: pointer; }
-    ul { padding: 0; }
-    li { background: #f8f9fa; margin: 10px 0; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
-    #message { color: red; text-align: center; font-weight: bold; margin: 15px 0; }
+    body { background-color: #f8f9fa; padding: 40px 20px; }
+    .card { max-width: 700px; margin: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .list-group-item { display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
-  <h1>Админ-панель</h1>
 
-  <h3>Добавить пользователя</h3>
-  <input id="new-username" placeholder="Логин">
-  <input id="new-password" type="password" placeholder="Пароль">
-  <button onclick="createUser()">Создать</button>
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+      <div class="card p-4">
+        <div class="card-body">
+          <h2 class="text-center mb-4">Админ-панель</h2>
 
-  <h3>Список пользователей</h3>
-  <ul id="users-list"></ul>
+          <h5 class="mt-4">Добавить пользователя</h5>
+          <div class="row g-3">
+            <div class="col-md-5">
+              <input id="new-username" class="form-control" placeholder="Логин">
+            </div>
+            <div class="col-md-5">
+              <input id="new-password" type="password" class="form-control" placeholder="Пароль">
+            </div>
+            <div class="col-md-2">
+              <button onclick="createUser()" class="btn btn-primary w-100">Создать</button>
+            </div>
+          </div>
 
-  <div id="message"></div>
+          <h5 class="mt-5">Список пользователей</h5>
+          <ul id="users-list" class="list-group mb-3"></ul>
 
-  <script>
-    const API_URL = 'https://backend-zpyu.onrender.com';
+          <div id="message" class="text-center fw-bold"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    async function loadUsers() {
-      try {
-        const res = await fetch(`${API_URL}/admin/users`);
-        if (!res.ok) throw new Error();
-        const users = await res.json();
-        const list = document.getElementById('users-list');
-        list.innerHTML = '';
-        users.forEach(u => {
-          const li = document.createElement('li');
-          li.innerHTML = `<span><strong>${u.username}</strong> (ID: ${u._id})</span>
-                          <button onclick="deleteUser('${u._id}')">Удалить</button>`;
-          list.appendChild(li);
-        });
-      } catch {
-        document.getElementById('message').textContent = 'Ошибка загрузки списка';
-      }
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script>
+  const API_URL = 'https://backend-zpyu.onrender.com';
+
+  async function loadUsers() {
+    try {
+      const res = await fetch(`${API_URL}/admin/users`);
+      if (!res.ok) throw new Error();
+      const users = await res.json();
+      const list = document.getElementById('users-list');
+      list.innerHTML = '';
+      users.forEach(u => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.innerHTML = `
+          <span><strong>${u.username}</strong> (ID: ${u._id})</span>
+          <button onclick="deleteUser('${u._id}')" class="btn btn-sm btn-danger">Удалить</button>
+        `;
+        list.appendChild(li);
+      });
+    } catch {
+      document.getElementById('message').textContent = 'Ошибка загрузки списка';
+      document.getElementById('message').className = 'text-danger';
+    }
+  }
+
+  async function createUser() {
+    const un = document.getElementById('new-username').value.trim();
+    const pw = document.getElementById('new-password').value.trim();
+    const msg = document.getElementById('message');
+
+    if (!un || !pw) {
+      msg.textContent = 'Заполните логин и пароль';
+      msg.className = 'text-danger';
+      return;
     }
 
-    async function createUser() {
-      const un = document.getElementById('new-username').value.trim();
-      const pw = document.getElementById('new-password').value.trim();
-      const msg = document.getElementById('message');
+    try {
+      const res = await fetch(`${API_URL}/admin/create`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: un, password: pw})
+      });
 
-      if (!un || !pw) {
-        msg.textContent = 'Заполните логин и пароль';
-        return;
+      const data = await res.json();
+
+      if (res.ok) {
+        msg.textContent = 'Создан!';
+        msg.className = 'text-success';
+        document.getElementById('new-username').value = '';
+        document.getElementById('new-password').value = '';
+        loadUsers();
+      } else {
+        msg.textContent = data.error || 'Ошибка';
+        msg.className = 'text-danger';
       }
-
-      try {
-        const res = await fetch(`${API_URL}/admin/create`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({username: un, password: pw})
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          msg.style.color = 'green';
-          msg.textContent = 'Создан!';
-          document.getElementById('new-username').value = '';
-          document.getElementById('new-password').value = '';
-          loadUsers();
-        } else {
-          msg.style.color = 'red';
-          msg.textContent = data.error || 'Ошибка';
-        }
-      } catch {
-        msg.textContent = 'Не удалось соединиться';
-      }
+    } catch {
+      msg.textContent = 'Не удалось соединиться';
+      msg.className = 'text-danger';
     }
+  }
 
-    async function deleteUser(id) {
-      if (!confirm('Удалить?')) return;
-      try {
-        const res = await fetch(`${API_URL}/admin/delete/${id}`, {method: 'DELETE'});
-        if (res.ok) {
-          document.getElementById('message').style.color = 'green';
-          document.getElementById('message').textContent = 'Удалено!';
-          loadUsers();
-        } else {
-          document.getElementById('message').textContent = 'Ошибка удаления';
-        }
-      } catch {
-        document.getElementById('message').textContent = 'Не удалось соединиться';
+  async function deleteUser(id) {
+    if (!confirm('Удалить пользователя?')) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/delete/${id}`, {method: 'DELETE'});
+      if (res.ok) {
+        document.getElementById('message').textContent = 'Удалено!';
+        document.getElementById('message').className = 'text-success';
+        loadUsers();
+      } else {
+        document.getElementById('message').textContent = 'Ошибка удаления';
+        document.getElementById('message').className = 'text-danger';
       }
+    } catch {
+      document.getElementById('message').textContent = 'Не удалось соединиться';
+      document.getElementById('message').className = 'text-danger';
     }
+  }
 
-    loadUsers(); // загрузить список сразу
-  </script>
+  loadUsers();
+</script>
+
 </body>
 </html>

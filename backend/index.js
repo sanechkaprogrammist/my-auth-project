@@ -57,6 +57,28 @@ app.delete('/admin/delete/:id', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+// Регистрация (доступна всем)
+app.post('/register', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Логин и пароль обязательны' });
+  }
+
+  try {
+    const existing = await User.findOne({ username });
+    if (existing) {
+      return res.status(409).json({ error: 'Пользователь с таким логином уже существует' });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const user = new User({ username, password: hashed });
+    await user.save();
+
+    res.status(201).json({ message: 'Регистрация успешна! Теперь можно войти.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
 
 // ──────────────── Логин для основного сайта ────────────
 app.post('/login', async (req, res) => {
