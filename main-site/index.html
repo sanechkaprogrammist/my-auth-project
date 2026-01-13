@@ -8,18 +8,28 @@
     input { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; }
     button { padding: 12px 30px; background: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; }
     #message { margin-top: 20px; font-weight: bold; }
+    h2 { margin-top: 40px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
+
   <h1>Вход в систему</h1>
+  
   <input id="username" placeholder="Логин" required>
   <input id="password" type="password" placeholder="Пароль" required>
   <button onclick="login()">Войти</button>
+
+  <h2>Регистрация</h2>
+  <input id="reg-username" placeholder="Логин" required>
+  <input id="reg-password" type="password" placeholder="Пароль" required>
+  <button onclick="register()">Зарегистрироваться</button>
+
   <div id="message"></div>
 
   <script>
     const API_URL = 'https://backend-zpyu.onrender.com';
 
+    // ── Функция входа (остаётся без изменений) ────────────────────────────────
     async function login() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
@@ -55,6 +65,47 @@
         msg.textContent = 'Не удалось соединиться с сервером';
       }
     }
+
+    // ── Новая функция регистрации ─────────────────────────────────────────────
+    async function register() {
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      const msg = document.getElementById('message');
+
+      msg.style.color = 'black';
+      msg.textContent = 'Регистрация...';
+
+      if (!username || !password) {
+        msg.style.color = 'red';
+        msg.textContent = 'Заполните логин и пароль';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/register`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username, password})
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          msg.style.color = 'green';
+          msg.textContent = data.message;
+          // Очищаем поля после успеха
+          document.getElementById('reg-username').value = '';
+          document.getElementById('reg-password').value = '';
+        } else {
+          msg.style.color = 'red';
+          msg.textContent = data.error || 'Ошибка регистрации';
+        }
+      } catch (e) {
+        msg.style.color = 'red';
+        msg.textContent = 'Не удалось соединиться с сервером';
+      }
+    }
   </script>
+
 </body>
 </html>
